@@ -1,0 +1,10 @@
+We are looking for a Senior Python Developer.
+You will work on AI-powered tools for document processing.
+
+Requirements:
+- 5+ years of Python experience
+- Knowledge of LLMs and RAG
+- Familiarity with cloud services (AWS, GCP, Azure)
+
+Preferred:
+- Experience with AI agents
