@@ -1,5 +1,10 @@
-openai
 anthropic
-pdfplumber
-rich
 python-dotenv
+pdfplumber
+scikit-learn
+numpy
+pandas
+sqlalchemy
+psycopg2-binary
+streamlit
+tqdm

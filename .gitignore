@@ -1,1 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+env/
+.Python
+
+# IDE
+.vscode/
+.idea/
+
+# Env
 .env
+
+# macOS
+.DS_Store
+
+# Python packaging
+dist/
+build/
+
+# Optional: data files you don't want in repo
+data/resumes/*.pdf
