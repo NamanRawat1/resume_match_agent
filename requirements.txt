@@ -8,3 +8,7 @@ sqlalchemy
 psycopg2-binary
 streamlit
 tqdm
+selenium
+webdriver-manager
+beautifulsoup4
+

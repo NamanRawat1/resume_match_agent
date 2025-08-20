@@ -2,38 +2,46 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import streamlit as st
-import tempfile, os, json
-from match_logic import match_resume_to_job
-from db import init_db, save_result
 from utils import extract_text_from_pdf
+from scraper import fetch_naukri_jobs
+from match_logic import match_resume_against_jobs
+import urllib.parse
 
+st.set_page_config(page_title="Resume Matcher", layout="wide")
 
-init_db()
-st.title("Resume → Job Match Agent")
+st.title("📄 Resume vs Naukri Job Matcher")
+st.markdown("Upload your resume and find the **best matching jobs** from Naukri.com.")
 
-uploaded_resume = st.file_uploader("Upload resume PDF", type=["pdf"])
-uploaded_job = st.file_uploader("Upload job description (.txt)", type=["txt"])
+# --- Search keyword input ---
+default_keyword = "senior software engineer"
+keyword = st.text_input("Job Search Keyword", value=default_keyword)
+num_pages = st.slider("Pages to fetch from Naukri", min_value=1, max_value=5, value=2)
 
-if uploaded_resume and uploaded_job:
-    if st.button("Run match"):
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            tmp.write(uploaded_resume.read())
-            resume_path = tmp.name
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as tmp2:
-            tmp2.write(uploaded_job.read())
-            job_path = tmp2.name
+# File uploader
+uploaded_file = st.file_uploader("Upload Resume (PDF only)", type=["pdf"])
 
-        resume_text = extract_text_from_pdf(resume_path)
-        with open(job_path, "r", encoding="utf-8") as f:
-            job_text = f.read()
+if uploaded_file is not None:
+    # Encode keyword into Naukri search URL
+    search_query = urllib.parse.quote(keyword)
+    naukri_url = f"https://www.naukri.com/{search_query}-jobs?k={search_query}"
 
-        report = match_resume_to_job(resume_text, job_text)
-        st.subheader("Match Report")
-        st.json(report)
+    with st.spinner("Extracting text from your resume..."):
+        resume_text = extract_text_from_pdf(uploaded_file)
 
-        save_result(resume_path, job_path, report)
-        st.success("Saved to DB (if configured).")
+    with st.spinner(f"Fetching jobs for '{keyword}' from Naukri..."):
+        jobs = fetch_naukri_jobs(naukri_url, num_pages=num_pages)
 
-        # cleanup
-        os.unlink(resume_path)
-        os.unlink(job_path)
+    if not jobs:
+        st.error("No jobs found. Try another keyword.")
+    else:
+        st.success(f"Fetched {len(jobs)} jobs from Naukri.")
+
+        with st.spinner("Matching jobs..."):
+            matches = match_resume_against_jobs(resume_text, jobs, top_n=10)
+
+        st.subheader("🏆 Top 10 Job Matches")
+        for idx, m in enumerate(matches, 1):
+            st.markdown(f"### {idx}. [{m['title']}]({m['url']})")
+            st.write(f"**Score:** {m['match_score']}")
+            st.write(f"**Summary:** {m['summary']}")
+            st.write("---")
